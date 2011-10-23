@@ -12,6 +12,11 @@ app.get('/', function(req, res) {
 });
 
 
+var num_moves = 0
+
+
+var board = new Object();
+
 io.sockets.on('connection', function(socket) {
   console.log('a new connection was made');
 
@@ -19,63 +24,25 @@ io.sockets.on('connection', function(socket) {
   socket.emit("player", 0);
   
   socket.on("new move", function(data){
+
     var move = {
       x: data.x,
       y: data.y,
-      player: data.player
+      player: data.player,
+      number: data.number
     }
+    
+    //make sure this isn't an old move
+    if (num_moves > move.number) {
+      console.log("tried to send an old move");
+      return;
+    }
+    if (board[move.x+"-"+move.y] != undefined) {
+      console.log("tried to move in a position that already exists");
+      return;
+    }
+    board[move.x+"-"+move.y] = move.player;
+    
     io.sockets.emit('new move', move);
   });
-
-// on a new connection send all previous messages  
-//   io.sockets.on('connection', function(socket) {
-//   console.log('a new connection was made');
-//   socket.emit('questions', queue.map(function(queueItem) {
-//     if (queueItem.answered)
-//       return false;
-//     else
-//       return queueItem;
-//   }));
-
-
-// var firstMove = new Object;
-// firstMove.x = 0;
-// firstMove.y = 1;
-// firstMove.player = "player1";
-// socket.emit("new move", firstMove);
-  
-//   socket.emit('moves', queue.map(function(queueItem) {
-//     if (queueItem.answered)
-//       return false;
-//     else
-//       return queueItem;
-//   }));
-
-//   socket.on('new move', function(data) {
-//     var move = {
-//       id:       queue.length,
-//       name:     data.name,
-//       answered: false,
-//       prepared: null
-//     };
-//     queue.push(elem);
-//     io.sockets.emit('add question', elem);
-//   });
-
-//   socket.on('answer', function(data) {
-//     queue[data.index].answered = true;
-//     queue[data.index].prepared = data.prepared;
-//   });
-// 
-//   socket.on('start answering', function(data) {
-//     queue[data.id].beingAnswered = true;
-//     queue[data.id].answerer = data.answerer;
-//     io.sockets.emit('answering', data);
-//   });
-// 
-//   socket.on('cancel answer', function(data) {
-//     queue[data.id].beingAnswered = false;
-//     queue[data.id].answerer = null;
-//     io.sockets.emit('cancelled answer', data);
-//   });
 });

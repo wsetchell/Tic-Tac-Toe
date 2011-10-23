@@ -11,7 +11,7 @@
       }
       
       .player2_move {
-        background-color:#ffffff;
+        background-color:#ff00ff;
       }
     </style>
 
@@ -24,7 +24,7 @@
         this.x = x;
         this.y = y;
         this.player = player;
-        this.num_moves = 
+        this.num_moves = 0;
         
         this.getHTML = function() {
           return "x";
@@ -32,9 +32,41 @@
       }
 
       function Board() {
-        var board = new Array();
-      
+        var board = new Object();
+        this.get = function(x,y) {
+          return board[x +"-" + y];
+        }
+        
+        this.set = function(x,y, player) {
+          board[x + '-' + y] = player;
+        }
+        
         this.cur_player = "player1_move";
+        
+        this.is_win = function(x0, y0, x1, y1, x2, y2) {
+          var s1 = this.get(x0,y0)
+          if (s1 == this.get(x1, y1) && s1 == this.get(x2,y2) ) 
+            return s1
+          else return false
+        }
+        
+        this.check_game_won = function(){
+          var winner = false
+          //loop cols
+          for(var x = 0; x<3; x++){
+            winner = winner || this.is_win(x, 0, x, 1, x, 2);
+          }
+          //loop rows
+          for(var y = 0; y<3; y++){
+            winner = winner || this.is_win(0, y, 1, y, 2, y);
+          }
+          
+          //check diagonals
+          winner = winner || this.is_win(0,0, 1,1, 2,2);
+          winner = winner || this.is_win(0,2, 1,1, 2,0); 
+          
+          return winner;
+        };
         
         this.switch_player = function(){
           if (this.cur_player == "player1_move")
@@ -43,12 +75,19 @@
             this.cur_player = "player1_move";
         };
         
-        this.addMove = function(move) {
-          var id = "#" + move.x+"-"+move.y;
-            
-          $(id).addClass(this.cur_player);    
+        this.add_move = function(move) {    
+          //add the move
+          var id = "#" + move.x+"-"+move.y;          
+          $(id).addClass(this.cur_player);
+          
           this.switch_player();
-        };
+          
+          this.set(move.x,move.y,move.player);
+          
+          var winner = this.check_game_won();
+          if (winner)
+            alert(winner);
+        };        
       }
 
       var b = new Board();
@@ -56,7 +95,7 @@
       var socket = io.connect('http://localhost:1111');
       
       socket.on("new move", function(data){
-        b.addMove(new Move(data.x, data.y, data.player));
+        b.add_move(new Move(data.x, data.y, data.player));
       });
     
       $(document).ready(function() {
@@ -66,11 +105,8 @@
           var x = $(this).attr('id').split("-")[0];
           var y = $(this).attr('id').split("-")[1];
           
-          //add the move
-          var move = new Move(x, y, b.cur_player);
-          b.addMove(move);
-          
           //send the move
+          var move = new Move(x, y, b.cur_player);
           socket.emit('new move', move);
         });
       });
