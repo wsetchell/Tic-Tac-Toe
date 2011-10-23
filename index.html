@@ -11,7 +11,7 @@
       }
       
       .player2_move {
-        background-color:#ff00ff;
+        background-color:#ffffff;
       }
     </style>
 
@@ -20,10 +20,11 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/jquery-1.4.3.min.js"></script>
     <script>
-      function Move(data){
-        this.x = data.y;
-        this.y = data.x;
-        this.player = data.player;
+      function Move(x, y, player){
+        this.x = x;
+        this.y = y;
+        this.player = player;
+        this.num_moves = 
         
         this.getHTML = function() {
           return "x";
@@ -32,46 +33,66 @@
 
       function Board() {
         var board = new Array();
-        // TODO make 2D arr
-        this.addMove = function(move) {
-          board.getElem(move.x,move.y).addClass(move.player); 
-        }
-      }
       
+        this.cur_player = "player1_move";
+        
+        this.switch_player = function(){
+          if (this.cur_player == "player1_move")
+            this.cur_player = "player2_move";
+          else
+            this.cur_player = "player1_move";
+        };
+        
+        this.addMove = function(move) {
+          var id = "#" + move.x+"-"+move.y;
+            
+          $(id).addClass(this.cur_player);    
+          this.switch_player();
+        };
+      }
+
       var b = new Board();
       
       var socket = io.connect('http://localhost:1111');
-
+      
       socket.on("new move", function(data){
-          b.addMove(new Move(data));
-        });
+        b.addMove(new Move(data.x, data.y, data.player));
       });
-            
+    
       $(document).ready(function() {
-        alert("loaded");
+        //when someone clicks a space
+        $(".space").click(function() {
+          //get the location of the space
+          var x = $(this).attr('id').split("-")[0];
+          var y = $(this).attr('id').split("-")[1];
+          
+          //add the move
+          var move = new Move(x, y, b.cur_player);
+          b.addMove(move);
+          
+          //send the move
+          socket.emit('new move', move);
+        });
       });
     </script>
     <table class="tic_tac_board">
       <tr>
-        <td id = "0-0" class="player1_move">x</td>
-        <td id = "0-1" class="player2_move">x</td>
-        <td id = "0-2">x</td>
+        <td id = "0-0" class="space">x</td>
+        <td id = "1-0" class="space">x</td>
+        <td id = "2-0" class="space">x</td>
       </tr>
-        <td id = "1-0">x</td>
-        <td id = "1-1">x</td>
-        <td id = "1-2">x</td>      
+        <td id = "0-1" class="space">x</td>
+        <td id = "1-1" class="space">x</td>
+        <td id = "2-1" class="space">x</td>      
       <tr>
-        <td id = "2-0">x</td>
-        <td id = "2-1">x</td>
-        <td id = "2-2">x</td>
+        <td id = "0-2" class="space">x</td>
+        <td id = "1-2" class="space">x</td>
+        <td id = "2-2" class="space">x</td>
       </tr>
     </table>
     <br/>
     <form>
-      <input type="text" name="x" />
-      <input type="text" name="y" />
-      <input type="text" name="player" />
-      <input type="submit" value="submit" onclick=""/>
+
     </form>
 
   </body>
