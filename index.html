@@ -1,0 +1,57 @@
+<html>
+  <head>
+    <title>Tic Tac Toe</title>
+    <style type="text/css">
+    </style>
+  </head>
+  <body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/jquery-1.4.3.min.js"></script>
+    <script>
+      function Move(data){
+        this.x = data.y;
+        this.y = data.x;
+
+        this.getHTML = function() {
+          return "todo generate html";
+        }
+      }
+
+      function Board() {
+        board = [][]
+      
+        this.addMove = function(move) {
+          this.moves.push(move);
+          
+          //update the view of the table
+        }
+      }
+      
+      var b = new Board();
+      
+      var socket = io.connect('http://localhost:1111');
+
+      socket.on("new move", function(data){
+          // todo update my board
+          b.addMove(new Move(move).createElem());
+        });
+      });
+      
+      socket.on("add move", function(data){
+        b.addMove(new Move(data));
+      }
+      
+      $(document).ready(function() {
+        alert("loaded");
+      });
+    </script>
+    
+    <input id="NewName" type="text" name="new_name" placeholder="Enter your name here..." />
+    <button id="AddQuestionButton">
+      Add to the Queue!
+    </button>
+    <ul id="QuestionList">
+      <!-- populated dynamically -->
+    </ul>
+  </body>
+</html>
