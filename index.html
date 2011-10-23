@@ -1,8 +1,20 @@
 <html>
-  <head>
+  <head>  
     <title>Tic Tac Toe</title>
     <style type="text/css">
+      .tic_tac_table, th, td {
+        border: 1px solid blue;
+      }
+      
+      .player1_move {
+        background-color:#ffff00;
+      }
+      
+      .player2_move {
+        background-color:#ff00ff;
+      }
     </style>
+
   </head>
   <body>
     <script src="/socket.io/socket.io.js"></script>
@@ -11,19 +23,18 @@
       function Move(data){
         this.x = data.y;
         this.y = data.x;
-
+        this.player = data.player;
+        
         this.getHTML = function() {
-          return "todo generate html";
+          return "x";
         }
       }
 
       function Board() {
-        board = [][]
-      
+        var board = new Array();
+        // TODO make 2D arr
         this.addMove = function(move) {
-          this.moves.push(move);
-          
-          //update the view of the table
+          board.getElem(move.x,move.y).addClass(move.player); 
         }
       }
       
@@ -32,26 +43,36 @@
       var socket = io.connect('http://localhost:1111');
 
       socket.on("new move", function(data){
-          // todo update my board
-          b.addMove(new Move(move).createElem());
+          b.addMove(new Move(data));
         });
       });
-      
-      socket.on("add move", function(data){
-        b.addMove(new Move(data));
-      }
-      
+            
       $(document).ready(function() {
         alert("loaded");
       });
     </script>
-    
-    <input id="NewName" type="text" name="new_name" placeholder="Enter your name here..." />
-    <button id="AddQuestionButton">
-      Add to the Queue!
-    </button>
-    <ul id="QuestionList">
-      <!-- populated dynamically -->
-    </ul>
+    <table class="tic_tac_board">
+      <tr>
+        <td id = "0-0" class="player1_move">x</td>
+        <td id = "0-1" class="player2_move">x</td>
+        <td id = "0-2">x</td>
+      </tr>
+        <td id = "1-0">x</td>
+        <td id = "1-1">x</td>
+        <td id = "1-2">x</td>      
+      <tr>
+        <td id = "2-0">x</td>
+        <td id = "2-1">x</td>
+        <td id = "2-2">x</td>
+      </tr>
+    </table>
+    <br/>
+    <form>
+      <input type="text" name="x" />
+      <input type="text" name="y" />
+      <input type="text" name="player" />
+      <input type="submit" value="submit" onclick=""/>
+    </form>
+
   </body>
 </html>

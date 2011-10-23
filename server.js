@@ -26,7 +26,12 @@ io.sockets.on('connection', function(socket) {
     }
     io.sockets.emit('new move', move);
   });
-  
+
+var firstMove = new Object;
+firstMove.x = 0;
+firstMove.y = 1;
+firstMove.player = "player1";
+socket.emit("new move", firstMove);
   
 //   socket.emit('moves', queue.map(function(queueItem) {
 //     if (queueItem.answered)
