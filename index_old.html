@@ -1,0 +1,167 @@
+<html>
+  <head>
+    <title>Office Hours Queue</title>
+    <style type="text/css">
+      #QuestionList li span.answerer {
+        display: none;
+      }
+      #QuestionList li button.cancelAnswer {
+        display: none;
+      }
+      #QuestionList li.beingAnswered {
+        color: #00710D;
+      }
+      #QuestionList li.beingAnswered button.startAnswer {
+        display: none;
+      }
+      #QuestionList li.beingAnswered.byMe button.cancelAnswer {
+        display: inline;
+      }
+      #QuestionList li.beingAnswered span.answerer {
+        display: inline;
+      }
+      #QuestionList li.beingAnswered.byMe span.answerer {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/jquery-1.4.3.min.js"></script>
+    <script>
+      function QueueItem(data){
+        this.id = data.id;
+        this.beingAnswered = data.beingAnswered;
+        this.name = data.name;
+        this.answerer = data.answerer;
+
+        this.createElem = function() {
+          $('#QuestionList').append(this.getHTML());
+          return this;
+        }
+
+        this.getElem = function() {
+          return $('li#' + this.id);
+        }
+
+        this.getHTML = function() {
+          var klass = '';
+          if (this.beingAnswered)
+            klass = ' class="beingAnswered"';
+          var html = '<li id="' + this.id + '"' + klass + '>';
+          html += 'Name: ' + this.name;
+          html += ' <button class="startAnswer">Start Answering!</button>';
+          html += '<span class="answerer">';
+          if (this.answerer)
+            html += '- ' + this.answerer;
+          html += '</span>';
+          html += '<button class="cancelAnswer">Cancel</button>';
+          html +='</li>';
+//          alert("made this html \n#####\n"+html);
+          return html;
+        }
+
+        this.addAnswerer = function(answerer) {
+          this.answerer = answerer;
+          $li = this.getElem();
+          $li.addClass('beingAnswered');
+          $li.find('span.answerer').html('- ' + this.answerer);
+        }
+
+        this.cancelAnswer = function() {
+          this.answerer = null;
+          this.beingAnswered = false;
+          this.getElem().removeClass('beingAnswered');
+        }
+
+        this.destroy = function() {
+          this.getElem().remove();
+        }
+      }
+
+      function QueueManager() {
+        this.queue = [];
+
+        this.addQueueItem = function(queueItem) {
+          this.queue.push(queueItem);
+        }
+
+        this.removeQueueItem = function(id) {
+          for (var i = 0; i < this.queue.length; i++)
+            if (id == this.queue[i].id)
+              this.queue.pop(i).destroy();
+        }
+
+        this.addAnswerer = function(id, answerer) {
+          this.queue.forEach(function(queueItem) {
+            if (queueItem.id == id)
+              queueItem.addAnswerer(answerer);
+          });
+        }
+
+        this.cancelAnswer = function(id) {
+          this.queue.forEach(function(queueItem) {
+            if (queueItem.id == id)
+              queueItem.cancelAnswer();
+          });
+        }
+      }
+
+      var QM = new QueueManager();
+
+      var socket = io.connect('http://localhost:9999');
+
+      socket.on('questions', function(data) {
+        data.forEach(function(question) {
+          QM.addQueueItem(new QueueItem(question).createElem());
+        });
+      });
+
+      socket.on('add question', function(data) {
+        QM.addQueueItem(new QueueItem(data).createElem());
+      });
+
+      socket.on('answering', function(data) {
+        QM.addAnswerer(data.id, data.answerer);
+      });
+
+      socket.on('answer', function(data) {
+        QM.removeQueueItem(data.id);
+      });
+
+      socket.on('cancelled answer', function(data) {
+        QM.cancelAnswer(data.id);
+      });
+
+      $(document).ready(function() {
+        $('#AddQuestionButton').click(function() {
+          var name = $('#NewName').val();
+          if (name)
+            socket.emit('new question', {name: name});
+        });
+        $('button.startAnswer').live('click', function() {
+          var data = {
+            id:       $(this).closest('li').attr('id'),
+            answerer: 'The Teacher'
+          };
+          socket.emit('start answering', data);
+          $(this).closest('li').addClass('byMe');
+        });
+        $('button.cancelAnswer').live('click', function() {
+          var data = {
+            id: $(this).closest('li').attr('id')
+          };
+          socket.emit('cancel answer', data);
+          $(this).closest('li').removeClass('byMe');
+        });
+      });
+    </script>
+    <input id="NewName" type="text" name="new_name" placeholder="Enter your name here..." />
+    <button id="AddQuestionButton">
+      Add to the Queue!
+    </button>
+    <ul id="QuestionList">
+      <!-- populated dynamically -->
+    </ul>
+  </body>
+</html>
